@@ -1,0 +1,17 @@
+{
+    "max_length": 20,
+    "batch_size": 16,
+    "d_model": 64,
+    "ff_hidden_dim": 128,
+    "num_heads": 8,
+    "num_blocks": 2,
+    "embedder_dropout": 0.3,
+    "ffn_dropout": 0.3,
+    "classifier_dropout": 0.3,
+    "epochs": 200,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.01,
+    "label_smoothing": 0.1,
+    "lr_scheduler_step_size": 30,
+    "lr_scheduler_gamma": 0.5
+}
