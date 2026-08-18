@@ -1,15 +1,17 @@
-from transformer import TransformerModel, Tokenizer
-from new_preprocess import load_and_clean_data, group_aware_split
-from torch.utils.data import Dataset, DataLoader
-from sklearn.metrics import precision_recall_fscore_support, classification_report
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import os
 import copy
+import time
 import json
 import matplotlib.pyplot as plt
+
+from transformer import TransformerModel, Tokenizer
+from new_preprocess import load_and_clean_data, group_aware_split
+from torch.utils.data import Dataset, DataLoader
+from sklearn.metrics import precision_recall_fscore_support, classification_report
+
 
 """
 Dataset Class
@@ -252,6 +254,8 @@ def train_transformer(eval_every=10, patience=3):
     checkpoints_without_improvement = 0
     stopped_early = False
 
+    start_time = time.time()
+
     for epoch in range(EPOCHS):
         total_loss = 0
 
@@ -346,6 +350,8 @@ def train_transformer(eval_every=10, patience=3):
                 stopped_early = True
                 break
 
+    end_time = time.time()
+    print(f"--- Transformer Training Time: {(end_time - start_time) / 60:.4f} minutes ---")
         
     print("\nTraining Complete." + (" (stopped early)" if stopped_early else ""))
 
@@ -387,7 +393,7 @@ def train_transformer(eval_every=10, patience=3):
     print("\n-- Test accuracy by split-method:")
     if group_protected_total:
         gp_acc = group_protected_correct / group_protected_total * 100
-        print(f"   Group-protected intents (real leakage protection): "
+        print(f"   Group-protected intents: "
               f"{gp_acc:.2f}% ({group_protected_correct}/{group_protected_total})")
     else:
         print("   Group-protected intents: none in this dataset.")
@@ -408,7 +414,7 @@ def train_transformer(eval_every=10, patience=3):
     target_names = [id_to_intent[i] for i in range(num_intents)]
     report = classification_report(
         final_targets, final_preds, labels=list(range(num_intents)),
-        target_names=target_names, zero_division=0
+        target_names=target_names, zero_division=0, digits=4
     )
     with open("transformer_classification_report.txt", "w", encoding="utf-8") as f:
         f.write(report)

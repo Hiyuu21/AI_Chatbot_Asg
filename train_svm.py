@@ -2,8 +2,9 @@ from new_preprocess import load_and_clean_data, group_aware_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.metrics import precision_recall_fscore_support, accuracy_score
+from sklearn.metrics import precision_recall_fscore_support, accuracy_score, classification_report
 import json
+import time
 import joblib
 
 
@@ -52,8 +53,12 @@ def train_svm():
     # the same role softmax plays for the Transformer's logits.
     # ---------------------------------------------------------------
     #model = SVC(kernel="linear", probability=True, random_state=42)
+    print("Starting SVM training...")
+    start_time = time.time()
     model = CalibratedClassifierCV(LinearSVC(random_state=42, dual=False), ensemble=False)
     model.fit(X_train, train_labels)
+    end_time = time.time()
+    print(f"--- SVM Training Time: {(end_time - start_time):.4f} seconds ---")
 
     # Evaluate on held-out test split (same metrics reported in evaluation.py)
     train_preds = model.predict(X_train)
@@ -78,18 +83,35 @@ def train_svm():
 
     print("\nTrain ---")
     print(f"\n--> Accuracy:  {train_accuracy:.4f}%", end=" ")
-    print(f"--> Precision: {train_precision:.4%}")
-    print(f"--> Recall:    {train_recall:.4%}", end=" ")
-    print(f"--> F1-Score:  {train_f1:.4%}")
+    print(f"--> Precision: {train_precision:.4f}")
+    print(f"--> Recall:    {train_recall:.4f}", end=" ")
+    print(f"--> F1-Score:  {train_f1:.4f}")
     print('-'*50 + "\n")
 
 
     print("\nTest ---")
     print(f"\n--> Accuracy:  {test_accuracy:.4f}%", end=" ")
-    print(f"--> Precision: {precision:.4%}")
-    print(f"--> Recall:    {recall:.4%}", end=" ")
-    print(f"--> F1-Score:  {f1:.4%}")
+    print(f"--> Precision: {precision:.4f}")
+    print(f"--> Recall:    {recall:.4f}", end=" ")
+    print(f"--> F1-Score:  {f1:.4f}")
     print('-'*50 + "\n")
+
+    # ---------------------------------------------------------------
+    # Generate and save the detailed classification report
+    # ---------------------------------------------------------------
+    target_names = [id_to_intent[i] for i in range(num_intents)]
+    report = classification_report(
+        test_labels, 
+        test_preds, 
+        labels=list(range(num_intents)),
+        target_names=target_names, 
+        zero_division=0,
+        digits=4
+    )
+    
+    with open("svm_classification_report.txt", "w", encoding="utf-8") as f:
+        f.write(report)
+    print("svm_classification_report.txt saved.")
 
     # ---------------------------------------------------------------
     # Save artifacts (analogous to vocab.json / trained_bot.pth)

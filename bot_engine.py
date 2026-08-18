@@ -150,7 +150,7 @@ class BotEngine:
 
         # --- CONFIDENCE THRESHOLD LOGIC ---
         if confidence < 0.5:
-            reply = "I am not completely sure what you mean. Could you rephrase that query?"
+            reply = "I am not completely sure what you mean. Could you rephrase your question?"
         elif 0.5 <= confidence <= 0.8:
             reply = f"I'm sorry I'm not sure about your question. It seems like you're asking about {intent}, can you please clarify your question?"
         else:

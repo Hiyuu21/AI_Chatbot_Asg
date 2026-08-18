@@ -1,6 +1,6 @@
-import os
 import pickle
 import random
+import time
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -182,6 +182,8 @@ print("\n" + "=" * 60)
 print("Training LSTM Model...")
 print("=" * 60)
 
+start_time = time.time()
+
 history = model.fit(
     X_train, y_train,
     epochs=EPOCHS,
@@ -189,6 +191,9 @@ history = model.fit(
     callbacks=[test_callback],
     verbose=1
 )
+
+end_time = time.time()
+print(f"--- LSTM Training Time: {(end_time - start_time) / 60:.4f} minutes ---")
 
 # ==========================================================
 # FINAL EVALUATION & SAVING
@@ -216,33 +221,37 @@ history_df.to_csv("lstm_training_history.csv", index=False)
 print("✓ lstm_training_history.csv saved.")
 
 # Generate Graphics
-plt.figure(figsize=(8, 5))
-plt.plot(range(1, EPOCHS + 1), history.history["accuracy"], label="Training Accuracy", linewidth=2)
-plt.plot(range(1, EPOCHS + 1), test_callback.test_accuracy, label="Test Accuracy", linewidth=2)
-plt.title("LSTM Model Accuracy")
-plt.xlabel("Epoch")
-plt.ylabel("Accuracy")
-plt.xticks(range(1, EPOCHS + 1))
-plt.legend()
-plt.grid(True)
-plt.tight_layout()
-plt.savefig("lstm_accuracy.png", dpi=300, bbox_inches="tight")
-plt.close()
-print("✓ lstm_accuracy.png saved.")
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
-plt.figure(figsize=(8, 5))
-plt.plot(range(1, EPOCHS + 1), history.history["loss"], label="Training Loss", linewidth=2)
-plt.plot(range(1, EPOCHS + 1), test_callback.test_loss, label="Test Loss", linewidth=2)
-plt.title("LSTM Model Loss")
-plt.xlabel("Epoch")
-plt.ylabel("Loss")
-plt.xticks(range(1, EPOCHS + 1))
-plt.legend()
-plt.grid(True)
-plt.tight_layout()
-plt.savefig("lstm_loss.png", dpi=300, bbox_inches="tight")
-plt.close()
-print("✓ lstm_loss.png saved.")
+# --- Loss subplot ---
+ax = axes[0]
+ax.plot(range(1, EPOCHS + 1), history.history["loss"], label="Training Loss", color="tab:blue", linewidth=2)
+ax.plot(range(1, EPOCHS + 1), test_callback.test_loss, label="Test Loss", color="tab:orange", linewidth=2)
+ax.set_title("LSTM Model Loss")         # FIXED
+ax.set_xlabel("Epoch")                  # FIXED
+ax.set_ylabel("Loss")                   # FIXED
+ax.set_xticks(range(1, EPOCHS + 1))     # FIXED
+ax.set_ylim(bottom=0)
+ax.legend()
+ax.grid(alpha=0.3)                      # Added alpha=0.3 so both charts look consistent
+
+# --- Accuracy subplot ---
+ax = axes[1]
+ax.plot(range(1, EPOCHS + 1), history.history["accuracy"], label="Training Accuracy", color="tab:blue", linewidth=2)
+ax.plot(range(1, EPOCHS + 1), test_callback.test_accuracy, label="Test Accuracy", color="tab:orange", linewidth=2)
+ax.set_title("LSTM Model Accuracy")     # FIXED
+ax.set_xlabel("Epoch")                  # FIXED
+ax.set_ylabel("Accuracy")               # FIXED
+ax.set_xticks(range(1, EPOCHS + 1))     # FIXED
+ax.set_ylim(0, 1.05)                    # FIXED to match Keras 0.0 - 1.0 decimal accuracy output
+ax.legend()
+ax.grid(alpha=0.3)
+
+fig.suptitle("Training Performance Trend (Overfit Check)", fontsize=14)
+fig.tight_layout()
+fig.savefig("lstm_loss_accuracy.png", dpi=150)
+plt.close(fig)
+print("✓ lstm_loss_accuracy.png saved.")
 
 # Classification Report & Confusion Matrix
 predictions = model.predict(X_test, verbose=0)
@@ -252,7 +261,8 @@ classification_result = classification_report(
     y_test_integer, predicted_class,
     labels=np.arange(num_classes),
     target_names=encoder.classes_,
-    zero_division=0
+    zero_division=0,
+    digits=4
 )
 
 with open("lstm_classification_report.txt", "w", encoding="utf-8") as f:
