@@ -4,7 +4,7 @@ from bot_engine import BotEngine
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
 
-MAIN_FONT = "Helvetica"
+MAIN_FONT = "Segoe UI"
 
 class Chatbot(ctk.CTk):
     def __init__(self):
@@ -27,7 +27,7 @@ class Chatbot(ctk.CTk):
         self.sidebar_frame.grid(row=0, column=0, sticky='nsew')
         self.sidebar_frame.grid_propagate(False)
 
-        self.sidebar_label = ctk.CTkLabel(self.sidebar_frame, text="Campus Bot", font=ctk.CTkFont(family=MAIN_FONT, size=24, weight="bold"))
+        self.sidebar_label = ctk.CTkLabel(self.sidebar_frame, text="TARUMT FAQ Chatbot", font=ctk.CTkFont(family=MAIN_FONT, size=24, weight="bold"))
         self.sidebar_label.pack(pady=20, padx=20)
 
         self.model_label = ctk.CTkLabel(self.sidebar_frame, text="Select Model:", font=ctk.CTkFont(family=MAIN_FONT, size=13))
@@ -38,17 +38,23 @@ class Chatbot(ctk.CTk):
             values = ["SVM", "LSTM", "Transformer"],
             command=self.change_model_event,
             dynamic_resizing=False,
-            font=ctk.CTkFont(family=MAIN_FONT, size=13)
+            font=ctk.CTkFont(family=MAIN_FONT, size=13),
+            fg_color="#333333",              
+            button_color="#2b2b2b",          
+            button_hover_color="#3a3a3a",    
+            dropdown_fg_color="#2b2b2b",     
+            dropdown_hover_color="#3a3a3a",  
+            text_color="#FFFFFF"             
         )
         self.model_selector.pack(padx=20, pady=10, fill="x")
 
-        self.status_label = ctk.CTkLabel(self.sidebar_frame, text="Status: Waiting for selection...", text_color="orange", font=ctk.CTkFont(family=MAIN_FONT, size=12))
+        self.status_label = ctk.CTkLabel(self.sidebar_frame, text="Status: Waiting for selection...", text_color="#FFB74D", font=ctk.CTkFont(family=MAIN_FONT, size=12))
         self.status_label.pack(anchor="w", padx=20, pady=(0, 15))
 
         self.cap_label = ctk.CTkLabel(self.sidebar_frame, text="What can I answer?", font=ctk.CTkFont(family=MAIN_FONT, size=14, weight="bold"))
         self.cap_label.pack(anchor="w", padx=20, pady=(15, 0))
 
-        self.info_box = ctk.CTkTextbox(self.sidebar_frame, height=140, fg_color="#2b2b2b", font=ctk.CTkFont(family=MAIN_FONT, size=12), wrap="word")
+        self.info_box = ctk.CTkTextbox(self.sidebar_frame, height=140, fg_color="#2b2b2b", font=ctk.CTkFont(family=MAIN_FONT, size=12), wrap="word", corner_radius=10, border_width=0)
         self.info_box.pack(padx=20, pady=5, fill="x")
 
         capabilities_text = (
@@ -66,7 +72,7 @@ class Chatbot(ctk.CTk):
         self.spacer = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
         self.spacer.pack(expand=True, fill="both")
 
-        self.clear_button = ctk.CTkButton(self.sidebar_frame, text="Clear Chat", command=self.clear_chat, font=ctk.CTkFont(family=MAIN_FONT, size=13))
+        self.clear_button = ctk.CTkButton(self.sidebar_frame, text="Clear Chat", command=self.clear_chat, font=ctk.CTkFont(family=MAIN_FONT, size=13), fg_color="#FFFFFF", text_color="#262626", hover_color="#E5E5E5")
         self.clear_button.pack(padx=20, pady=20, fill="x")
 
         # ==========================================
@@ -86,32 +92,32 @@ class Chatbot(ctk.CTk):
         self.input_frame.grid(row=1, column=0, sticky="ew", padx=20, pady=(0, 20))
         self.input_frame.grid_columnconfigure(0, weight=1) 
 
-        self.entry_box = ctk.CTkEntry(self.input_frame, placeholder_text="Type your question here...", font=ctk.CTkFont(family=MAIN_FONT, size=14))
+        self.entry_box = ctk.CTkEntry(self.input_frame, placeholder_text="Type your question here...", font=ctk.CTkFont(family=MAIN_FONT, size=14), corner_radius=20, border_width=1, border_color="#333333", fg_color="#212121")
         self.entry_box.grid(row=0, column=0, sticky="ew", padx=(0, 10), ipady=8)
         self.entry_box.bind("<Return>", self.send_message_event)
 
-        self.send_button = ctk.CTkButton(self.input_frame, text="Send", width=80, font=ctk.CTkFont(family=MAIN_FONT, size=14, weight="bold"), command=self.send_message_event)
+        self.send_button = ctk.CTkButton(self.input_frame, text="Send", width=80, font=ctk.CTkFont(family=MAIN_FONT, size=14, weight="bold"), command=self.send_message_event, fg_color="#FFFFFF", text_color="#262626", hover_color="#E5E5E5")
         self.send_button.grid(row=0, column=1, ipady=3)
 
         # Trigger the initial model load
         self.change_model_event(self.model_selector.get())
-        self.typing_label = None # Placeholder for our typing indicator
+        self.typing_label = None 
 
 
     # ==========================================
     # EVENT FUNCTIONS 
     # ==========================================
     def change_model_event(self, selected_model):
-        self.status_label.configure(text=f"Status: Loading {selected_model}...", text_color="orange")
+        self.status_label.configure(text=f"Status: Loading {selected_model}...", text_color="#FFB74D")
         self.update()
 
         success = self.bot_engine.load_model(selected_model)
 
         if success:
-            self.status_label.configure(text=f"Status: {selected_model} Active", text_color="green")
+            self.status_label.configure(text=f"Status: {selected_model} Active", text_color="#2ECC71")
             self.display_message(f"System switched to {selected_model} model. How can I help you?", "bot")
         else:
-            self.status_label.configure(text=f"Status: Error loading {selected_model}", text_color="red")
+            self.status_label.configure(text=f"Status: Error loading {selected_model}", text_color="#FF5252")
             self.display_message(f"Error loading the {selected_model} model. Check your terminal for details.", "bot")
 
     def clear_chat(self):
@@ -125,11 +131,11 @@ class Chatbot(ctk.CTk):
         row_frame.pack(fill="x", pady=5, padx=10)
         
         if sender == "user":
-            bubble_color = "#094C4D"
-            text_color = "white"
+            bubble_color = "#FFFFFF"
+            text_color = "#262626"
             alignment = "e" 
         else:
-            bubble_color = "#2d2d2d" 
+            bubble_color = "#080303" 
             text_color = "#e0e0e0"   
             alignment = "w"
             
