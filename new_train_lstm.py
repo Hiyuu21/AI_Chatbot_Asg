@@ -14,6 +14,7 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.models import Sequential
 from keras.layers import Embedding, LSTM, Dense, Dropout
 from keras.utils import to_categorical
+from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 # Import centralized preprocessing functions
 from new_preprocess import load_and_clean_data, group_aware_split
@@ -28,11 +29,12 @@ tf.random.set_seed(SEED)
 
 DATASET = "faq_idk7.xlsx"
 
-EMBEDDING_DIM = 128
-LSTM_UNITS = 128
+EMBEDDING_DIM = 64
+LSTM_UNITS = 64
 DROPOUT_RATE = 0.5
 TEST_SIZE = 0.20
-EPOCHS = 8
+MAX_EPOCHS = 100
+PATIENCE = 3
 BATCH_SIZE = 16
 SEQUENCE_PERCENTILE = 95
 
@@ -121,24 +123,6 @@ y_train = to_categorical(y_train_integer, num_classes=num_classes)
 y_test = to_categorical(y_test_integer, num_classes=num_classes)
 
 # ==========================================================
-# SAVE CONFIGURATION
-# ==========================================================
-with open("lstm_config.pkl", "wb") as f:
-    pickle.dump({
-        "max_length": max_length,
-        "vocab_size": vocab_size,
-        "embedding_dim": EMBEDDING_DIM,
-        "lstm_units": LSTM_UNITS,
-        "num_classes": num_classes,
-        "sequence_percentile": SEQUENCE_PERCENTILE,
-        "test_size": TEST_SIZE,
-        "epochs": EPOCHS,
-        "batch_size": BATCH_SIZE,
-        "dropout_rate": DROPOUT_RATE
-    }, f)
-print("✓ lstm_config.pkl saved.")
-
-# ==========================================================
 # BUILD LSTM MODEL
 # ==========================================================
 print("\n" + "=" * 60)
@@ -157,43 +141,40 @@ model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accur
 model.summary()
 
 # ==========================================================
-# TEST ACCURACY CALLBACK
-# ==========================================================
-class TestAccuracyCallback(tf.keras.callbacks.Callback):
-    def __init__(self, X_test, y_test):
-        super().__init__()
-        self.X_test = X_test
-        self.y_test = y_test
-        self.test_accuracy = []
-        self.test_loss = []
-
-    def on_epoch_end(self, epoch, logs=None):
-        loss, accuracy = self.model.evaluate(self.X_test, self.y_test, verbose=0)
-        self.test_loss.append(loss)
-        self.test_accuracy.append(accuracy)
-        print(f" - test_loss: {loss:.4f} - test_accuracy: {accuracy:.4f}")
-
-test_callback = TestAccuracyCallback(X_test, y_test)
-
-# ==========================================================
 # TRAIN MODEL
 # ==========================================================
 print("\n" + "=" * 60)
 print("Training LSTM Model...")
 print("=" * 60)
 
+early_stop = EarlyStopping(
+    monitor="val_loss",
+    patience=PATIENCE,
+    restore_best_weights=True,
+    verbose=1
+)
+
+checkpoint = ModelCheckpoint(
+    "lstm_model.keras",
+    monitor="val_loss",
+    save_best_only=True,
+    verbose=0
+)
+
 start_time = time.time()
 
 history = model.fit(
     X_train, y_train,
-    epochs=EPOCHS,
+    validation_data=(X_test, y_test),
+    epochs=MAX_EPOCHS,
     batch_size=BATCH_SIZE,
-    callbacks=[test_callback],
+    callbacks=[early_stop,checkpoint],
     verbose=1
 )
 
 end_time = time.time()
 print(f"--- LSTM Training Time: {(end_time - start_time) / 60:.4f} minutes ---")
+
 
 # ==========================================================
 # FINAL EVALUATION & SAVING
@@ -206,16 +187,17 @@ test_loss, test_accuracy = model.evaluate(X_test, y_test, verbose=0)
 print(f"Final Test Loss: {test_loss:.4f}")
 print(f"Final Test Accuracy: {test_accuracy * 100:.2f}%\n")
 
-model.save("lstm_model.keras")
 print("✓ lstm_model.keras saved.")
 
 # Save Training History
+actual_epochs = len(history.history["loss"])
+
 history_df = pd.DataFrame({
-    "Epoch": range(1, EPOCHS + 1),
+    "Epoch": range(1, actual_epochs + 1),
     "Training Accuracy": history.history["accuracy"],
-    "Test Accuracy": test_callback.test_accuracy,
+    "Test Accuracy": history.history["val_accuracy"],   # renamed from test_callback.test_accuracy
     "Training Loss": history.history["loss"],
-    "Test Loss": test_callback.test_loss
+    "Test Loss": history.history["val_loss"],            # renamed from test_callback.test_loss
 })
 history_df.to_csv("lstm_training_history.csv", index=False)
 print("✓ lstm_training_history.csv saved.")
@@ -223,26 +205,51 @@ print("✓ lstm_training_history.csv saved.")
 # Generate Graphics
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
+
+# ==========================================================
+# SAVE CONFIGURATION
+# ==========================================================
+with open("lstm_config.pkl", "wb") as f:
+    pickle.dump({
+        "max_length": max_length,
+        "vocab_size": vocab_size,
+        "embedding_dim": EMBEDDING_DIM,
+        "lstm_units": LSTM_UNITS,
+        "num_classes": num_classes,
+        "sequence_percentile": SEQUENCE_PERCENTILE,
+        "test_size": TEST_SIZE,
+        "max_epochs": MAX_EPOCHS,        # configured ceiling
+        "epochs_trained": actual_epochs, # what actually happened
+        "batch_size": BATCH_SIZE,
+        "dropout_rate": DROPOUT_RATE
+    }, f)
+print("✓ lstm_config.pkl saved.")
+
+
+# ==========================================================
+# VISUALIZATION
+# ==========================================================
+
 # --- Loss subplot ---
 ax = axes[0]
-ax.plot(range(1, EPOCHS + 1), history.history["loss"], label="Training Loss", color="tab:blue", linewidth=2)
-ax.plot(range(1, EPOCHS + 1), test_callback.test_loss, label="Test Loss", color="tab:orange", linewidth=2)
+ax.plot(range(1, actual_epochs + 1), history.history["loss"], label="Training Loss", color="tab:blue", linewidth=2)
+ax.plot(range(1, actual_epochs + 1), history.history["val_loss"], label="Test Loss", color="tab:orange", linewidth=2)
 ax.set_title("LSTM Model Loss")         # FIXED
 ax.set_xlabel("Epoch")                  # FIXED
 ax.set_ylabel("Loss")                   # FIXED
-ax.set_xticks(range(1, EPOCHS + 1))     # FIXED
+ax.set_xticks(range(1, actual_epochs + 1))     # FIXED
 ax.set_ylim(bottom=0)
 ax.legend()
 ax.grid(alpha=0.3)                      # Added alpha=0.3 so both charts look consistent
 
 # --- Accuracy subplot ---
 ax = axes[1]
-ax.plot(range(1, EPOCHS + 1), history.history["accuracy"], label="Training Accuracy", color="tab:blue", linewidth=2)
-ax.plot(range(1, EPOCHS + 1), test_callback.test_accuracy, label="Test Accuracy", color="tab:orange", linewidth=2)
+ax.plot(range(1, actual_epochs + 1), history.history["accuracy"], label="Training Accuracy", color="tab:blue", linewidth=2)
+ax.plot(range(1, actual_epochs + 1), history.history["val_accuracy"], label="Test Accuracy", color="tab:orange", linewidth=2)
 ax.set_title("LSTM Model Accuracy")     # FIXED
 ax.set_xlabel("Epoch")                  # FIXED
 ax.set_ylabel("Accuracy")               # FIXED
-ax.set_xticks(range(1, EPOCHS + 1))     # FIXED
+ax.set_xticks(range(1, actual_epochs + 1))     # FIXED
 ax.set_ylim(0, 1.05)                    # FIXED to match Keras 0.0 - 1.0 decimal accuracy output
 ax.legend()
 ax.grid(alpha=0.3)
