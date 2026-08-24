@@ -8,7 +8,7 @@ import json
 import matplotlib.pyplot as plt
 
 from transformer import TransformerModel, Tokenizer
-from new_preprocess import load_and_clean_data, group_aware_split
+from preprocess import load_and_clean_data, group_aware_split
 from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import precision_recall_fscore_support, classification_report
 

@@ -9,7 +9,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 from keras.models import load_model
 from keras.preprocessing.sequence import pad_sequences
 
-from new_preprocess import preprocess_text
+from preprocess import preprocess_text
 from transformer import Tokenizer, TransformerModel
 
 class BotEngine:
