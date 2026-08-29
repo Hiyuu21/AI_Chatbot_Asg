@@ -1,5 +1,6 @@
 import pickle
 import random
+import os
 import time
 import numpy as np
 import pandas as pd
@@ -192,6 +193,9 @@ print(f"Final Test Accuracy: {test_accuracy * 100:.2f}%\n")
 model.save("lstm_model.keras")
 print("✓ lstm_model.keras saved.")
 
+LOG_DIR = "training_logs"
+os.makedirs(LOG_DIR, exist_ok=True)
+
 # Save Training History
 history_df = pd.DataFrame({
     "Epoch": range(1, EPOCHS + 1),
@@ -200,7 +204,7 @@ history_df = pd.DataFrame({
     "Training Loss": history.history["loss"],
     "Test Loss": test_callback.test_loss,
 })
-history_df.to_csv("lstm_training_history.csv", index=False)
+history_df.to_csv(os.path.join(LOG_DIR, "lstm_training_history.csv"), index=False)
 print("✓ lstm_training_history.csv saved.")
 
 # Generate Graphics
@@ -256,7 +260,7 @@ ax.grid(alpha=0.3)
 
 fig.suptitle("Training Performance Trend (Overfit Check)", fontsize=14)
 fig.tight_layout()
-fig.savefig("lstm_loss_accuracy.png", dpi=150)
+fig.savefig(os.path.join(LOG_DIR, "lstm_loss_accuracy.png"), dpi=150)
 plt.close(fig)
 print("✓ lstm_loss_accuracy.png saved.")
 
@@ -272,13 +276,13 @@ classification_result = classification_report(
     digits=4
 )
 
-with open("lstm_classification_report.txt", "w", encoding="utf-8") as f:
+with open(os.path.join(LOG_DIR, "lstm_classification_report.txt"), "w", encoding="utf-8") as f:
     f.write(classification_result)
 print("✓ lstm_classification_report.txt saved.")
 
 cm = confusion_matrix(y_test_integer, predicted_class, labels=np.arange(num_classes))
 cm_df = pd.DataFrame(cm, index=encoder.classes_, columns=encoder.classes_)
-cm_df.to_csv("lstm_confusion_matrix.csv")
+cm_df.to_csv(os.path.join(LOG_DIR, "lstm_confusion_matrix.csv"))
 print("✓ lstm_confusion_matrix.csv saved.")
 
 print("\n" + "=" * 60)

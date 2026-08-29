@@ -197,7 +197,6 @@ class MultiHeadAttention(nn.Module):
         # Pass Q, K, and V into attention formula
         attention_output, _ = self.attention(Q, K, V)
         # (The attention_output shape is now [1, 8, 10, 8])
-
         
         # transpose(1,2) to turn the dimensions back to [1, 10, 8, 8]
         # .view(...,self.d_model) merges the 8 and 8 back into 64

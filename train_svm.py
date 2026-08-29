@@ -6,6 +6,7 @@ from sklearn.metrics import precision_recall_fscore_support, accuracy_score, cla
 import json
 import time
 import joblib
+import os
 
 
 """
@@ -108,8 +109,10 @@ def train_svm():
         zero_division=0,
         digits=4
     )
-    
-    with open("svm_classification_report.txt", "w", encoding="utf-8") as f:
+
+    LOG_DIR = "training_logs"
+    os.makedirs(LOG_DIR, exist_ok=True)
+    with open(os.path.join(LOG_DIR, "svm_classification_report.txt"), "w", encoding="utf-8") as f:
         f.write(report)
     print("svm_classification_report.txt saved.")
 

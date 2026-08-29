@@ -367,7 +367,9 @@ def train_transformer(eval_every=10, patience=3):
     torch.save(model.state_dict(), "trained_transformer.pth")
     print("Saved as 'trained_transformer.pth'.")
 
-    plot_training_curves(history)
+    LOG_DIR = "training_logs"
+    os.makedirs(LOG_DIR, exist_ok=True)
+    plot_training_curves(history, save_path=os.path.join(LOG_DIR, "transformer_training_curves.png"))
 
     # Final diagnostic: is high test accuracy real, or leakage from the random-fallback intents 
     # (single SeedGroup, near-duplicate paraphrases split across train/test)? 
@@ -416,8 +418,8 @@ def train_transformer(eval_every=10, patience=3):
         final_targets, final_preds, labels=list(range(num_intents)),
         target_names=target_names, zero_division=0, digits=4
     )
-    with open("transformer_classification_report.txt", "w", encoding="utf-8") as f:
-        f.write(report)
+    with open(os.path.join(LOG_DIR, "transformer_classification_report.txt"), "w", encoding="utf-8") as f:
+            f.write(report)
     print("-- Full per-intent precision/recall/F1 saved to 'transformer_classification_report.txt'.")
 
 if __name__ == "__main__":
