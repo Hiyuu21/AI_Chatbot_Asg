@@ -45,7 +45,7 @@ These scripts are run offline to generate the necessary model artifacts.
 * **`bot_engine.py`**: The backend inference controller. It dynamically routes text through the correct preprocessing steps, loads the selected model's artifacts into memory, executes predictions, and applies the safety confidence-threshold logic.
 
 
-* **`chatbot.py`** (Source 8): The frontend graphical user interface built with CustomTkinter. This is the main entry point for end-users to interact with the models.
+* **`bot_ui.py`**: The frontend graphical user interface built with CustomTkinter. This is the main entry point for end-users to interact with the models.
 
 
 
@@ -55,8 +55,4 @@ These scripts are run offline to generate the necessary model artifacts.
 
 1. Ensure the raw dataset (`faq_idk7.xlsx`) is placed in the root directory.
 
-
-2. Execute the desired training script (e.g., `python train_transformer.py`) to generate the model artifacts and vocabulary dictionaries.
-
-
-3. Run `python chatbot.py` to launch the graphical interface. Select your trained model from the sidebar dropdown to begin chatting.
+2. The trained models' paths are included in this zipped folder and are ready to use. Run `bot_ui.py` to launch the graphical interface. Select your trained model from the sidebar dropdown to begin chatting.
